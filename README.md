@@ -24,6 +24,14 @@ pnpm format
 pnpm lint
 ```
 
+## App development
+
+```bash
+# build the single app monorepo
+pnpm build --filter=@repo/web
+
+```
+
 ## Project Structure
 
 ```
