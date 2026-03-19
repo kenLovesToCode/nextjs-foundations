@@ -30,6 +30,8 @@ pnpm lint
 # build the single app monorepo
 pnpm build --filter=@repo/web
 
+# install package per repo
+pnpm add server-only --filter @repo/web
 ```
 
 ## Project Structure
