@@ -13,9 +13,9 @@ interface Product {
 const fallbackProducts = mockDb.products as Product[]
 
 async function simulateSlowNetwork() {
-  if (process.env.NODE_ENV !== 'development') {
-    return
-  }
+  // if (process.env.NODE_ENV !== 'development') {
+  //   return
+  // }
 
   await new Promise((resolve) => setTimeout(resolve, 4000))
 }
