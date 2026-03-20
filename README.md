@@ -67,6 +67,18 @@ nextjs-foundations-starter/
 - [Biome](https://biomejs.dev/) - Linting and formatting
 - [TypeScript](https://www.typescriptlang.org/) - Type safety
 
+## Deployment
+
+```bash
+# deploy blog app
+cd apps/blog
+vercel --prod
+
+cd apps/web
+vercel --prod --env BLOG_URL=https://the-url-result-from-apps-blog-after-deploy
+
+```
+
 ## License
 
 MIT
