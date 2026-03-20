@@ -1,6 +1,47 @@
 "use cache"
  
 import { cacheLife, cacheTag } from 'next/cache'
+import mockDb from '../../../../mock-api/db.json'
+
+interface Product {
+  id: string
+  name: string
+  price: number
+  inventory: number
+}
+
+const fallbackProducts = mockDb.products as Product[]
+
+async function simulateSlowNetwork() {
+  if (process.env.NODE_ENV !== 'development') {
+    return
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 4000))
+}
+
+async function fetchProductsFromApi() {
+  const apiUrl = process.env.API_URL?.trim()
+
+  if (!apiUrl) {
+    return null
+  }
+
+  try {
+    const res = await fetch(`${apiUrl}/products`)
+    if (!res.ok) {
+      throw new Error('Failed to fetch products')
+    }
+
+    return (await res.json()) as Product[]
+  } catch (error) {
+    if (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
+      return null
+    }
+
+    throw error
+  }
+}
  
 /**
  * Fetch a single product by ID with caching.
@@ -10,13 +51,16 @@ export async function getProduct(id: string) {
   cacheLife('products') // 5min fresh, 15min revalidate, 1hr expire
   cacheTag('products', `product-${id}`) // Tag for invalidation
 
-  //add 3 seconds delay to simulate slow network
-  await new Promise((resolve) => setTimeout(resolve, 4000));
-  
-  const res = await fetch(`${process.env.API_URL}/products/${id}`)
-  if (!res.ok) throw new Error('Failed to fetch product')
-  
-  return res.json() as Promise<Product>
+  await simulateSlowNetwork()
+
+  const products = (await fetchProductsFromApi()) ?? fallbackProducts
+  const product = products.find((item) => item.id === id)
+
+  if (!product) {
+    throw new Error('Failed to fetch product')
+  }
+
+  return product
 }
  
 /**
@@ -26,19 +70,7 @@ export async function getProducts() {
   cacheLife('products')
   cacheTag('products') // Invalidate when any product changes
   
+  await simulateSlowNetwork()
 
-  //add 3 seconds delay to simulate slow network
-  await new Promise((resolve) => setTimeout(resolve, 4000));
-
-  const res = await fetch(`${process.env.API_URL}/products`)
-  if (!res.ok) throw new Error('Failed to fetch products')
-  
-  return res.json() as Promise<Product[]>
-}
- 
-interface Product {
-  id: string
-  name: string
-  price: number
-  inventory: number
+  return (await fetchProductsFromApi()) ?? fallbackProducts
 }
