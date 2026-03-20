@@ -9,6 +9,9 @@ import { cacheLife, cacheTag } from 'next/cache'
 export async function getProduct(id: string) {
   cacheLife('products') // 5min fresh, 15min revalidate, 1hr expire
   cacheTag('products', `product-${id}`) // Tag for invalidation
+
+  //add 3 seconds delay to simulate slow network
+  await new Promise((resolve) => setTimeout(resolve, 4000));
   
   const res = await fetch(`${process.env.API_URL}/products/${id}`)
   if (!res.ok) throw new Error('Failed to fetch product')
@@ -23,6 +26,10 @@ export async function getProducts() {
   cacheLife('products')
   cacheTag('products') // Invalidate when any product changes
   
+
+  //add 3 seconds delay to simulate slow network
+  await new Promise((resolve) => setTimeout(resolve, 4000));
+
   const res = await fetch(`${process.env.API_URL}/products`)
   if (!res.ok) throw new Error('Failed to fetch products')
   
