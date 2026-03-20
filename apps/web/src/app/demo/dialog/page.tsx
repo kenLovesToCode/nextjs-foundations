@@ -1,5 +1,8 @@
 // Server Component - renders server content inside the dialog
 
+import { connection } from "next/server";
+import { Suspense } from "react";
+
 import { Button } from "@repo/ui/components/button";
 import {
   DialogClose,
@@ -12,18 +15,7 @@ import {
   DialogTrigger,
 } from "@repo/ui/components/dialog";
 
-// Simulated server data
-async function getTermsContent(): Promise<string> {
-  // This would fetch from a CMS or database in a real app
-  return `By using this service, you agree to our terms. These terms were
-  last updated on ${new Date().toLocaleDateString()}. Server-rendered content
-  can be passed as children to client components.`;
-}
-
-export default async function DialogDemoPage() {
-  // Fetch content on the server
-  const termsContent = await getTermsContent();
-
+export default function DialogDemoPage() {
   return (
     <main className="flex flex-col gap-8 p-8">
       <div>
@@ -88,10 +80,9 @@ export default async function DialogDemoPage() {
                 Please read these terms carefully.
               </DialogDescription>
             </DialogHeader>
-            {/* Server-rendered content passed through */}
-            <div className="rounded-md bg-muted p-4 text-sm">
-              {termsContent}
-            </div>
+            <Suspense fallback={<TermsContentSkeleton />}>
+              <TermsContent />
+            </Suspense>
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button">I Understand</Button>
@@ -116,4 +107,24 @@ export default async function DialogDemoPage() {
       </section>
     </main>
   );
+}
+
+async function TermsContent() {
+  await connection();
+
+  const updatedAt = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "long",
+  }).format(new Date());
+
+  return (
+    <div className="rounded-md bg-muted p-4 text-sm">
+      By using this service, you agree to our terms. These terms were last
+      updated on {updatedAt}. Server-rendered content can be passed as children
+      to client components.
+    </div>
+  );
+}
+
+function TermsContentSkeleton() {
+  return <div className="h-20 animate-pulse rounded-md bg-muted" />;
 }

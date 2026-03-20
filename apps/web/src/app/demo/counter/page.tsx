@@ -2,17 +2,10 @@
 // Data fetching and heavy logic stays here on the server
 
 import { Counter } from "@/components/counter";
+import { connection } from "next/server";
+import { Suspense } from "react";
 
-// Simulated server-side data
-async function getServerTimestamp(): Promise<string> {
-  // This runs ONLY on the server
-  return new Date().toISOString();
-}
-
-export default async function CounterDemoPage() {
-  // Server-side data fetching (no JS shipped for this)
-  const serverTimestamp = await getServerTimestamp();
-
+export default function CounterDemoPage() {
   return (
     <main className="flex flex-col gap-8 p-8">
       <div>
@@ -26,10 +19,9 @@ export default async function CounterDemoPage() {
       {/* Server-rendered content (no JS) */}
       <section className="rounded-lg border bg-muted/50 p-6">
         <h2 className="font-semibold text-lg">Server-Rendered Content</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Generated at:{" "}
-          <code className="font-mono text-xs">{serverTimestamp}</code>
-        </p>
+        <Suspense fallback={<TimestampSkeleton />}>
+          <ServerTimestamp />
+        </Suspense>
         <p className="mt-1 text-sm text-muted-foreground">
           This content ships as HTML with zero JavaScript.
         </p>
@@ -62,4 +54,19 @@ export default async function CounterDemoPage() {
       </section>
     </main>
   );
+}
+
+async function ServerTimestamp() {
+  await connection();
+
+  return (
+    <p className="mt-2 text-sm text-muted-foreground">
+      Generated at:{" "}
+      <code className="font-mono text-xs">{new Date().toISOString()}</code>
+    </p>
+  );
+}
+
+function TimestampSkeleton() {
+  return <div className="mt-2 h-5 w-56 animate-pulse rounded bg-muted" />;
 }

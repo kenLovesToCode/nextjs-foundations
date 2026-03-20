@@ -2,6 +2,7 @@
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 
 // Simulated posts database
 const posts: Record<string, { title: string; content: string }> = {
@@ -16,18 +17,9 @@ const posts: Record<string, { title: string; content: string }> = {
 };
 
 // In Next.js 16, params is a Promise that must be awaited
-export default async function PostPage(props: {
+export default function PostPage(props: {
   params: Promise<{ slug: string }>;
 }) {
-  const params = await props.params;
-  const post = posts[params.slug];
-
-  // If post doesn't exist, trigger 404
-  // notFound() throws - don't wrap in try/catch or it won't work
-  if (!post) {
-    notFound();
-  }
-
   return (
     <main className="mx-auto max-w-2xl p-8">
       <Link
@@ -36,8 +28,35 @@ export default async function PostPage(props: {
       >
         ← Back to posts
       </Link>
+      <Suspense fallback={<PostSkeleton />}>
+        <PostContent params={props.params} />
+      </Suspense>
+    </main>
+  );
+}
+
+async function PostContent(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
+  const post = posts[params.slug];
+
+  if (!post) {
+    notFound();
+  }
+
+  return (
+    <>
       <h1 className="mb-4 font-bold text-3xl">{post.title}</h1>
       <p className="text-gray-600">{post.content}</p>
-    </main>
+    </>
+  );
+}
+
+function PostSkeleton() {
+  return (
+    <div className="animate-pulse space-y-4">
+      <div className="h-10 w-56 rounded bg-gray-200" />
+      <div className="h-5 w-full rounded bg-gray-100" />
+      <div className="h-5 w-3/4 rounded bg-gray-100" />
+    </div>
   );
 }

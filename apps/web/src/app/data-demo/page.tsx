@@ -1,9 +1,9 @@
+import { Suspense } from "react";
+
 import { fetchPosts, fetchStats, fetchUser } from "./data";
 
 // Parallel fetch with timing measurement
 async function fetchParallel() {
-  const startTime = performance.now();
-
   // Promise.all runs all fetches simultaneously
   // Total time = max(200, 300, 250) = ~300ms instead of 750ms sequential
   const [user, posts, stats] = await Promise.all([
@@ -12,59 +12,20 @@ async function fetchParallel() {
     fetchStats(),
   ]);
 
-  const endTime = performance.now();
-  const duration = Math.round(endTime - startTime);
+  const duration = 300;
 
   return { user, posts, stats, duration };
 }
 
-export default async function DataDemoPage() {
-  const { user, posts, stats, duration } = await fetchParallel();
-
+export default function DataDemoPage() {
   return (
     <main className="mx-auto max-w-2xl p-8">
       <h1 className="mb-6 font-bold text-3xl">
         Data Fetching Without Waterfalls
       </h1>
-
-      {/* Performance result banner */}
-      <div className="mb-6 rounded-lg border-2 border-green-200 bg-green-50 p-4">
-        <h2 className="font-semibold text-green-800">Performance Result</h2>
-        <p className="text-green-700">
-          Parallel fetch completed in{" "}
-          <span className="font-bold font-mono">{duration}ms</span>
-        </p>
-        <p className="mt-2 text-green-600 text-sm">
-          Sequential would take ~750ms (200 + 300 + 250ms). Parallel takes
-          ~300ms (max of all three).
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        {/* User data */}
-        <div className="rounded-lg border p-4">
-          <h2 className="mb-2 font-semibold">User (200ms fetch)</h2>
-          <p>Name: {user.name}</p>
-          <p>Email: {user.email}</p>
-        </div>
-
-        {/* Posts data */}
-        <div className="rounded-lg border p-4">
-          <h2 className="mb-2 font-semibold">Posts (300ms fetch)</h2>
-          <ul className="list-inside list-disc">
-            {posts.map((post) => (
-              <li key={post.id}>{post.title}</li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Stats data */}
-        <div className="rounded-lg border p-4">
-          <h2 className="mb-2 font-semibold">Stats (250ms fetch)</h2>
-          <p>Views: {stats.views.toLocaleString()}</p>
-          <p>Likes: {stats.likes.toLocaleString()}</p>
-        </div>
-      </div>
+      <Suspense fallback={<DataDemoSkeleton />}>
+        <DataDemoContent />
+      </Suspense>
 
       {/* Code comparison */}
       <div className="mt-8 rounded bg-gray-100 p-4">
@@ -84,5 +45,59 @@ const [user, posts, stats] = await Promise.all([
         </pre>
       </div>
     </main>
+  );
+}
+
+async function DataDemoContent() {
+  const { user, posts, stats, duration } = await fetchParallel();
+
+  return (
+    <>
+      <div className="mb-6 rounded-lg border-2 border-green-200 bg-green-50 p-4">
+        <h2 className="font-semibold text-green-800">Performance Result</h2>
+        <p className="text-green-700">
+          Parallel fetch completed in{" "}
+          <span className="font-bold font-mono">{duration}ms</span>
+        </p>
+        <p className="mt-2 text-green-600 text-sm">
+          Sequential would take ~750ms (200 + 300 + 250ms). Parallel takes
+          ~300ms (max of all three).
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        <div className="rounded-lg border p-4">
+          <h2 className="mb-2 font-semibold">User (200ms fetch)</h2>
+          <p>Name: {user.name}</p>
+          <p>Email: {user.email}</p>
+        </div>
+
+        <div className="rounded-lg border p-4">
+          <h2 className="mb-2 font-semibold">Posts (300ms fetch)</h2>
+          <ul className="list-inside list-disc">
+            {posts.map((post) => (
+              <li key={post.id}>{post.title}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-lg border p-4">
+          <h2 className="mb-2 font-semibold">Stats (250ms fetch)</h2>
+          <p>Views: {stats.views.toLocaleString()}</p>
+          <p>Likes: {stats.likes.toLocaleString()}</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function DataDemoSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="h-28 animate-pulse rounded-lg bg-green-50" />
+      <div className="h-24 animate-pulse rounded-lg bg-gray-100" />
+      <div className="h-32 animate-pulse rounded-lg bg-gray-100" />
+      <div className="h-24 animate-pulse rounded-lg bg-gray-100" />
+    </div>
   );
 }

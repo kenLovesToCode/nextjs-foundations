@@ -9,13 +9,11 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   currency: "USD",
 });
 
-export default async function ProductPage({
+export default function ProductPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-
   return (
     <main className="min-h-screen bg-stone-50">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10 sm:px-10 lg:px-12">
@@ -37,14 +35,15 @@ export default async function ProductPage({
         </header>
 
         <Suspense fallback={<ProductSkeleton />}>
-          <ProductDetails id={id} />
+          <ProductDetails params={params} />
         </Suspense>
       </div>
     </main>
   );
 }
 
-async function ProductDetails({ id }: { id: string }) {
+async function ProductDetails({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const product = await getProduct(id);
 
   return (
