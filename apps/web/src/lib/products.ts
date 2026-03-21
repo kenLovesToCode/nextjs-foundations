@@ -1,88 +1,92 @@
-"use cache"
- 
-import { cacheLife, cacheTag } from 'next/cache'
-import mockDb from '../../../../mock-api/db.json'
+import mockDb from '../../../../mock-api/db.json' with { type: 'json' };
 
 interface Product {
-  id: string
-  name: string
-  price: number
-  inventory: number
+  id: string;
+  name: string;
+  price: number;
+  inventory: number;
 }
 
-const fallbackProducts = mockDb.products as Product[]
+const fallbackProducts = mockDb.products as Product[];
+
+const PRODUCTS_REVALIDATE_SECONDS = 900;
 
 async function fetchProductFromApi(id: string) {
-  const apiUrl = process.env.API_URL?.trim()
+  const apiUrl = process.env.API_URL?.trim();
 
   if (!apiUrl) {
-    return null
+    return null;
   }
 
   try {
-    const res = await fetch(`${apiUrl}/products/${id}`)
-    if (!res.ok) {
-      throw new Error('Failed to fetch product')
+    const res = await fetch(`${apiUrl}/products/${id}`, {
+      cache: 'force-cache',
+      next: {
+        revalidate: PRODUCTS_REVALIDATE_SECONDS,
+        tags: ['products', `product-${id}`],
+      },
+    });
+
+    if (res.status === 404) {
+      return null;
     }
 
-    return (await res.json()) as Product
+    if (!res.ok) {
+      throw new Error('Failed to fetch product');
+    }
+
+    return (await res.json()) as Product;
   } catch (error) {
     if (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
-      return null
+      return null;
     }
 
-    throw error
+    throw error;
   }
 }
 
 async function fetchProductsFromApi() {
-  const apiUrl = process.env.API_URL?.trim()
+  const apiUrl = process.env.API_URL?.trim();
 
   if (!apiUrl) {
-    return null
+    return null;
   }
 
   try {
-    const res = await fetch(`${apiUrl}/products`)
+    const res = await fetch(`${apiUrl}/products`, {
+      cache: 'force-cache',
+      next: {
+        revalidate: PRODUCTS_REVALIDATE_SECONDS,
+        tags: ['products'],
+      },
+    });
+
     if (!res.ok) {
-      throw new Error('Failed to fetch products')
+      throw new Error('Failed to fetch products');
     }
 
-    return (await res.json()) as Product[]
+    return (await res.json()) as Product[];
   } catch (error) {
     if (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
-      return null
+      return null;
     }
 
-    throw error
+    throw error;
   }
 }
- 
-/**
- * Fetch a single product by ID with caching.
- * Cache invalidated via revalidateTag() after mutations.
- */
-export async function getProduct(id: string) {
-  cacheLife('products') // 5min fresh, 15min revalidate, 1hr expire
-  cacheTag('products', `product-${id}`) // Tag for invalidation
 
+export async function getProduct(id: string) {
   const product =
     (await fetchProductFromApi(id)) ??
-    fallbackProducts.find((item) => item.id === id)
+    fallbackProducts.find((item) => item.id === id);
 
   if (!product) {
-    throw new Error('Failed to fetch product')
+    throw new Error('Failed to fetch product');
   }
 
-  return product
+  return product;
 }
- 
-/**
- * Fetch all products with caching.
- */
-export async function getProducts() {
-  cacheLife('products')
-  cacheTag('products') // Invalidate when any product changes
 
-  return (await fetchProductsFromApi()) ?? fallbackProducts
+export async function getProducts() {
+  return (await fetchProductsFromApi()) ?? fallbackProducts;
 }
