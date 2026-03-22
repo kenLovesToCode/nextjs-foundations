@@ -1,10 +1,23 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
-import './globals.css';
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'Vercel Academy Foundation - Blog',
-  description: 'VAF Blog',
+  metadataBase: new URL(
+    process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000/blog",
+  ),
+  title: {
+    template: "%s | VAF Blog",
+    default: "Vercel Academy Foundation - Blog",
+  },
+  description: "Articles and tutorials from the VAF team",
+  openGraph: {
+    siteName: "VAF Blog",
+    locale: "en_US",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
