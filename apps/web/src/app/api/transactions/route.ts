@@ -1,21 +1,82 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
-export async function POST(request: NextRequest) {
-  // TODO: Add Zod validation (Section 4 Lesson 1)
-  // biome-ignore lint/correctness/noUnusedVariables: intentional - learners add validation in Section 4
-  const data = await request.json();
+// Input validation schema
+const TransactionSchema = z.object({
+  userId: z.string().uuid(),
+  amount: z.number().positive().max(10000),
+})
 
-  // Mock transaction processing
-  return NextResponse.json({
-    success: true,
-    transactionId: crypto.randomUUID(),
-    timestamp: Date.now(),
-  });
+//rate limiter
+const requestCounts = new Map<string, {count: number; resetAt: number}>();
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const limit = requestCounts.get(identifier);
+ 
+  if (!limit || now > limit.resetAt) {
+    requestCounts.set(identifier, { count: 1, resetAt: now + 60000 });
+    return false;
+  }
+ 
+  if (limit.count >= 10) {
+    return true; // Rate limited
+  }
+ 
+  limit.count++;
+  return false;
 }
-
+ 
+export async function POST(request: NextRequest) {
+  try {
+    // 2. Rate limiting (by IP for demo)
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    if (checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429 }
+      );
+    }
+ 
+    // 3. Input validation
+    const body = await request.json();
+    const result = TransactionSchema.safeParse(body);
+ 
+    if (!result.success) {
+      console.error("[transaction] Validation failed:", result.error);
+      return NextResponse.json(
+        { error: "Invalid input" },
+        { status: 400 }
+      );
+    }
+ 
+    const { userId, amount } = result.data;
+ 
+    // 4. Process transaction (mock)
+    const transaction = {
+      id: crypto.randomUUID(),
+      userId,
+      amount,
+      timestamp: Date.now(),
+    };
+ 
+    return NextResponse.json({
+      success: true,
+      transactionId: transaction.id,
+      timestamp: transaction.timestamp,
+    });
+  } catch (error) {
+    // 5. Safe error handling
+    console.error("[transaction] Error:", error);
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
+  }
+}
+ 
 export function GET() {
-  // Mock transaction list
   return NextResponse.json({
     transactions: [
       { id: "1", amount: 100, status: "completed" },
