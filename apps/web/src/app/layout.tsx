@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
+import { GoogleAnalytics } from "../components/google-analytics"; // Ensure Google Analytics is initialized
 
 import "./globals.css";
 
@@ -40,6 +41,11 @@ export default function RootLayout({
         {children}
         <Analytics />
         <SpeedInsights />
+        {/* <Script
+          src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"
+          strategy="afterInteractive"
+        /> */}
+        <GoogleAnalytics />
       </body>
     </html>
   );
