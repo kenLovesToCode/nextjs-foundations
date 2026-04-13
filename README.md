@@ -170,6 +170,15 @@ vercel --prod
 # Deploy web and pass the blog URL if needed
 cd apps/web
 vercel --prod --env BLOG_URL=https://the-url-result-from-apps-blog-after-deploy
+
+
+
+
+# NEW
+# install shared shadcn ui component
+pnpm dlx shadcn@latest add <component> --cwd apps/web
+#and import it like
+import { Card } from "@repo/ui/components/card";
 ```
 
 ## License
